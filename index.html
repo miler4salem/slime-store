@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Slime Boutique — 2.5D Slime Shop Simulator</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Top HUD Bar -->
+    <header id="hud">
+      <div class="hud-left">
+        <div class="brand-badge">
+          <span class="brand-dot"></span>
+          <span class="brand-title">Slime Boutique</span>
+        </div>
+        <div class="stat-pill cash-pill" title="Current Cash">
+          <span class="stat-label">Cash</span>
+          <span id="hud-cash" class="stat-value">$50.00</span>
+        </div>
+        <div class="stat-pill profit-pill" title="Session Net Profit (Revenue - Expenses)">
+          <span class="stat-label">Profit</span>
+          <span id="hud-profit" class="stat-value">$0.00</span>
+        </div>
+        <div class="stat-pill stock-pill" title="Slimes in your carrying tray">
+          <span class="stat-label">Tray</span>
+          <span id="hud-tray" class="stat-value">0</span>
+        </div>
+      </div>
+
+      <div class="hud-right">
+        <button id="btn-open-creator" class="hud-btn primary-btn">
+          🧪 Mix Slime
+        </button>
+        <button id="btn-open-accounting" class="hud-btn">
+          📒 Accounting
+        </button>
+        <button id="btn-toggle-shop" class="hud-btn open-btn">
+          🟢 Shop Open
+        </button>
+        <button id="btn-change-character" class="hud-btn icon-btn" title="Switch Shopkeeper">
+          👤
+        </button>
+      </div>
+    </header>
+
+    <!-- Main 45-degree 2.5D Game Viewport -->
+    <main id="viewport-wrap">
+      <canvas id="game-canvas"></canvas>
+
+      <!-- Floating interaction prompt -->
+      <div id="interact-hint" class="interact-hint hidden">
+        Press <kbd>E</kbd> or Click to interact
+      </div>
+
+      <!-- Controls helper -->
+      <div id="controls-bar">
+        <span><kbd>WASD</kbd> / <kbd>Arrows</kbd> Walk</span>
+        <span>•</span>
+        <span><strong>Click</strong> any stand, shelf, or mixing table</span>
+        <span>•</span>
+        <span><kbd>E</kbd> Interact nearby</span>
+      </div>
+
+      <!-- Toast notifications -->
+      <div id="toast-container"></div>
+    </main>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL 1: CHARACTER SELECTION (Male / Female)              -->
+  <!-- ========================================================= -->
+  <div id="modal-character" class="modal-backdrop">
+    <div class="modal-card char-modal">
+      <div class="modal-header-center">
+        <div class="eyebrow">WELCOME TO SLIME BOUTIQUE</div>
+        <h2>Choose Your Shopkeeper</h2>
+        <p class="subtitle">Pick who you want to play as while running your slime shop!</p>
+      </div>
+
+      <div class="char-choices">
+        <button class="char-card" data-gender="female" id="choose-female">
+          <canvas id="preview-female" width="140" height="160"></canvas>
+          <div class="char-name">Female Shopkeeper</div>
+          <div class="char-desc">Pastel boutique apron &amp; bow</div>
+        </button>
+
+        <button class="char-card" data-gender="male" id="choose-male">
+          <canvas id="preview-male" width="140" height="160"></canvas>
+          <div class="char-name">Male Shopkeeper</div>
+          <div class="char-desc">Mint shop apron &amp; cap</div>
+        </button>
+      </div>
+
+      <p class="session-note">
+        Session data &amp; accounting are stored in your browser's session cache.
+      </p>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL 2: SLIME CREATOR POP-UP UI                          -->
+  <!-- ========================================================= -->
+  <div id="modal-creator" class="modal-backdrop hidden">
+    <div class="modal-card creator-modal">
+      <div class="modal-header">
+        <div>
+          <h2>🧪 Slime Mixing Station</h2>
+          <p class="subtitle">Blend colors, add mix-ins, and craft slimes for your shelves</p>
+        </div>
+        <button class="close-btn" data-close="modal-creator">&times;</button>
+      </div>
+
+      <div class="creator-grid">
+        <!-- Left: Live Preview -->
+        <div class="creator-preview-panel">
+          <div class="preview-stage">
+            <canvas id="slime-preview-canvas" width="240" height="240"></canvas>
+          </div>
+
+          <div class="field-group">
+            <label for="slime-name-input">Slime Name</label>
+            <div class="name-row">
+              <input type="text" id="slime-name-input" maxlength="28" placeholder="Cotton Candy Sparkle" />
+              <button id="btn-random-name" class="small-btn" title="Generate random name">🎲</button>
+            </div>
+          </div>
+
+          <div class="cost-summary">
+            <div class="cost-row">
+              <span>Ingredient Cost</span>
+              <strong id="creator-cost" class="expense-text">$2.00</strong>
+            </div>
+            <div class="cost-row">
+              <span>Suggested Retail</span>
+              <strong id="creator-suggested" class="income-text">$8.00</strong>
+            </div>
+          </div>
+
+          <button id="btn-craft-slime" class="action-btn full-width">
+            ✨ Craft Slime &amp; Add to Tray
+          </button>
+        </div>
+
+        <!-- Right: Customization Controls -->
+        <div class="creator-controls">
+          <!-- Container / Toy Type -->
+          <div class="control-section">
+            <h3>1. Container / Toy Style</h3>
+            <div id="container-options" class="option-grid three-col"></div>
+          </div>
+
+          <!-- Color Mixer -->
+          <div class="control-section">
+            <h3>2. Color Mixer</h3>
+            <div class="color-mixer-row">
+              <div class="color-picker-block">
+                <span class="mini-label">Base Color</span>
+                <div id="primary-swatches" class="swatch-grid"></div>
+                <label class="custom-color-wrap">
+                  Custom: <input type="color" id="primary-custom-color" value="#ff8fab" />
+                </label>
+              </div>
+              <div class="color-picker-block">
+                <span class="mini-label">Swirl / Mix Color</span>
+                <div id="secondary-swatches" class="swatch-grid"></div>
+                <label class="custom-color-wrap">
+                  Custom: <input type="color" id="secondary-custom-color" value="#72efdd" />
+                </label>
+              </div>
+            </div>
+
+            <div class="slider-row">
+              <label for="color-mix-ratio">Mix Blend (<span id="mix-ratio-label">35%</span>)</label>
+              <input type="range" id="color-mix-ratio" min="0" max="100" value="35" />
+            </div>
+          </div>
+
+          <!-- Mix-ins -->
+          <div class="control-section">
+            <h3>3. Mix-Ins</h3>
+            <div id="mixin-options" class="mixin-grid"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL 3: SHELF / STAND PLACEMENT & PRICING                -->
+  <!-- ========================================================= -->
+  <div id="modal-stand" class="modal-backdrop hidden">
+    <div class="modal-card stand-modal">
+      <div class="modal-header">
+        <div>
+          <h2 id="stand-modal-title">Display Stand</h2>
+          <p id="stand-modal-subtitle" class="subtitle">Place slimes from your tray and set retail prices</p>
+        </div>
+        <button class="close-btn" data-close="modal-stand">&times;</button>
+      </div>
+
+      <div class="stand-body">
+        <!-- Current Slots on Stand -->
+        <div class="stand-section">
+          <h3>Shelf Slots</h3>
+          <div id="stand-slots-list" class="slots-grid"></div>
+        </div>
+
+        <!-- Player's Tray to Place -->
+        <div class="stand-section">
+          <div class="section-header-row">
+            <h3>Your Slime Tray</h3>
+            <button id="btn-quick-mix-from-stand" class="small-btn primary-outline">
+              + Mix New Slime
+            </button>
+          </div>
+          <div id="tray-items-list" class="tray-grid"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL 4: SESSION ACCOUNTING LEDGER                        -->
+  <!-- ========================================================= -->
+  <div id="modal-accounting" class="modal-backdrop hidden">
+    <div class="modal-card accounting-modal">
+      <div class="modal-header">
+        <div>
+          <h2>📒 Session Accounting</h2>
+          <p class="subtitle">Stored in your browser session cache (clears when tab closes)</p>
+        </div>
+        <button class="close-btn" data-close="modal-accounting">&times;</button>
+      </div>
+
+      <div class="accounting-kpis">
+        <div class="kpi-card">
+          <span class="kpi-label">Cash Balance</span>
+          <strong id="acc-cash" class="kpi-val">$50.00</strong>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Total Revenue</span>
+          <strong id="acc-revenue" class="kpi-val income-text">$0.00</strong>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Total Expenses</span>
+          <strong id="acc-expenses" class="kpi-val expense-text">$0.00</strong>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Net Profit</span>
+          <strong id="acc-profit" class="kpi-val">$0.00</strong>
+        </div>
+      </div>
+
+      <div class="accounting-meta">
+        <span>Slimes Crafted: <strong id="acc-crafted">0</strong></span>
+        <span>•</span>
+        <span>Slimes Sold: <strong id="acc-sold">0</strong></span>
+        <button id="btn-reset-session" class="danger-link-btn">Reset Session</button>
+      </div>
+
+      <div class="ledger-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Type</th>
+              <th>Description</th>
+              <th class="num-col">Amount</th>
+              <th class="num-col">Balance</th>
+            </tr>
+          </thead>
+          <tbody id="ledger-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
