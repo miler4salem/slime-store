@@ -601,6 +601,13 @@ export function drawCharacter(ctx, opts) {
   ctx.fillRect(-8, -11, 6, 10);
   ctx.fillRect(2, -11, 6, 10);
 
+  const facingBack = facing === 'up';
+
+  // Held slime jar drawn behind body when facing away from camera
+  if (holdingItem && facingBack) {
+    drawSlimeItem(ctx, holdingItem, 11, -18, 0.2, time);
+  }
+
   // Torso / Outfit
   ctx.fillStyle = colors.outfit;
   ctx.strokeStyle = 'rgba(61, 44, 46, 0.35)';
@@ -619,15 +626,44 @@ export function drawCharacter(ctx, opts) {
   ctx.fill();
   ctx.stroke();
 
-  // Shopkeeper Apron (only when facing not 'up')
-  if (colors.apron && facing !== 'up') {
-    ctx.fillStyle = colors.apron;
-    ctx.beginPath();
-    ctx.roundRect(-7, -25, 14, 15, 3);
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(61, 44, 46, 0.2)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
+  // Shopkeeper Apron (front bib when facing camera, tied waist straps/bow when facing away)
+  if (colors.apron) {
+    if (!facingBack) {
+      ctx.fillStyle = colors.apron;
+      ctx.beginPath();
+      ctx.roundRect(-7, -25, 14, 15, 3);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(61, 44, 46, 0.2)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    } else {
+      // Back apron tie strings & cute waist bow
+      ctx.strokeStyle = colors.apron;
+      ctx.lineWidth = 2.6;
+      ctx.beginPath();
+      ctx.moveTo(-10, -18);
+      ctx.lineTo(10, -18);
+      ctx.stroke();
+
+      // Bow loops & tails
+      ctx.fillStyle = colors.apron;
+      ctx.strokeStyle = 'rgba(61, 44, 46, 0.22)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.ellipse(-3.5, -18, 3.6, 2.2, -0.25, 0, Math.PI * 2);
+      ctx.ellipse(3.5, -18, 3.6, 2.2, 0.25, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.strokeStyle = colors.apron;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-1, -17);
+      ctx.lineTo(-3.5, -11.5);
+      ctx.moveTo(1, -17);
+      ctx.lineTo(3.5, -11.5);
+      ctx.stroke();
+    }
   }
 
   // Arms
@@ -637,77 +673,187 @@ export function drawCharacter(ctx, opts) {
   ctx.arc(13, -20, 3.6, 0, Math.PI * 2);
   ctx.fill();
 
-  // Back hair for female (behind head)
-  if (gender === 'female') {
+  if (facingBack) {
+    // ================= REAR VIEW HEAD & HAIR =================
+    // Subtle ears peeking out at the sides of the head
+    ctx.fillStyle = colors.skin;
+    ctx.strokeStyle = 'rgba(61, 44, 46, 0.28)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.arc(-13.5, -39, 2.6, 0, Math.PI * 2);
+    ctx.arc(13.5, -39, 2.6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Small neck nape visible below male hair
+    if (gender === 'male') {
+      ctx.fillStyle = colors.skin;
+      ctx.fillRect(-4, -31, 8, 5);
+    }
+
+    // Full back-of-head hair coverage
     ctx.fillStyle = colors.hair;
-    ctx.beginPath();
-    ctx.ellipse(0, -37, 17, 15, 0, 0, Math.PI * 2);
-    ctx.fill();
-    // Cute side ponytail / bun
-    ctx.beginPath();
-    ctx.arc(15, -36, 7, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // Head
-  ctx.fillStyle = colors.skin;
-  ctx.strokeStyle = 'rgba(61, 44, 46, 0.32)';
-  ctx.lineWidth = 1.6;
-  ctx.beginPath();
-  ctx.arc(0, -40, 14, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-
-  // Hair Top & Style
-  ctx.fillStyle = colors.hair;
-  if (gender === 'female') {
-    // Bangs / fringe
-    ctx.beginPath();
-    ctx.arc(0, -43, 14.2, Math.PI, Math.PI * 2);
-    ctx.lineTo(13, -38);
-    ctx.quadraticCurveTo(5, -42, 0, -39);
-    ctx.quadraticCurveTo(-6, -42, -13, -38);
-    ctx.closePath();
-    ctx.fill();
-
-    // Cute hair bow for shopkeeper
-    if (isPlayer) {
-      ctx.fillStyle = colors.accent;
+    ctx.strokeStyle = 'rgba(61, 44, 46, 0.34)';
+    ctx.lineWidth = 1.6;
+    if (gender === 'female') {
+      // Flowing back hair covering the entire back of the head & upper shoulders
       ctx.beginPath();
-      ctx.ellipse(-6, -53, 5, 3.2, -0.3, 0, Math.PI * 2);
-      ctx.ellipse(2, -53, 5, 3.2, 0.3, 0, Math.PI * 2);
+      ctx.arc(0, -40, 15.2, Math.PI, Math.PI * 2);
+      ctx.lineTo(15.5, -27);
+      ctx.quadraticCurveTo(8, -24, 0, -26);
+      ctx.quadraticCurveTo(-8, -24, -15.5, -27);
+      ctx.closePath();
       ctx.fill();
-      ctx.fillStyle = '#fff';
+      ctx.stroke();
+
+      // Subtle hair shine arc on back of head
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(-2, -53, 2, 0, Math.PI * 2);
+      ctx.arc(0, -41, 10, Math.PI * 1.18, Math.PI * 1.82);
+      ctx.stroke();
+
+      // Cute back ponytail / bun
+      ctx.fillStyle = colors.hair;
+      ctx.strokeStyle = 'rgba(61, 44, 46, 0.34)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(0, -35, 6.5, 0, Math.PI * 2);
       ctx.fill();
+      ctx.stroke();
+
+      // Hair tie / shopkeeper bow on the back
+      if (isPlayer) {
+        ctx.fillStyle = colors.accent;
+        ctx.beginPath();
+        ctx.ellipse(-4.5, -42, 5.2, 3.2, -0.25, 0, Math.PI * 2);
+        ctx.ellipse(4.5, -42, 5.2, 3.2, 0.25, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(0, -42, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.fillStyle = colors.outfit;
+        ctx.beginPath();
+        ctx.roundRect(-5, -42, 10, 3, 2);
+        ctx.fill();
+      }
+    } else {
+      // Male rear hair covering the back of the head cleanly to the nape
+      ctx.beginPath();
+      ctx.arc(0, -41, 14.6, Math.PI * 0.85, Math.PI * 2.15);
+      ctx.lineTo(11, -30);
+      ctx.quadraticCurveTo(0, -28.5, -11, -30);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Subtle hair shine
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.arc(0, -42, 9.5, Math.PI * 1.2, Math.PI * 1.8);
+      ctx.stroke();
+
+      // Male shopkeeper cap rear view (dome + adjustment arch, no front visor)
+      if (isPlayer) {
+        ctx.fillStyle = colors.accent;
+        ctx.strokeStyle = 'rgba(61, 44, 46, 0.3)';
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.arc(0, -44, 14.2, Math.PI * 0.96, Math.PI * 2.04);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Cap back adjustment cutout & strap
+        ctx.fillStyle = colors.hair;
+        ctx.beginPath();
+        ctx.arc(0, -43.5, 4.5, Math.PI, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#1d7874';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-5, -44);
+        ctx.lineTo(5, -44);
+        ctx.stroke();
+      }
     }
   } else {
-    // Male swept hair
-    ctx.beginPath();
-    ctx.arc(0, -43, 14.2, Math.PI * 0.95, Math.PI * 2.05);
-    ctx.lineTo(12, -41);
-    ctx.lineTo(4, -44);
-    ctx.lineTo(-4, -41);
-    ctx.lineTo(-12, -43);
-    ctx.closePath();
-    ctx.fill();
-
-    // Cute shopkeeper cap for male player
-    if (isPlayer) {
-      ctx.fillStyle = colors.accent;
+    // ================= FRONT / SIDE VIEW HEAD & HAIR =================
+    // Back hair for female (behind head)
+    if (gender === 'female') {
+      ctx.fillStyle = colors.hair;
       ctx.beginPath();
-      ctx.arc(0, -46, 13.5, Math.PI, Math.PI * 2);
+      ctx.ellipse(0, -37, 17, 15, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = '#1d7874';
+      // Cute side ponytail / bun
+      const ponyX = facing === 'left' ? 15 : facing === 'right' ? -15 : 15;
       ctx.beginPath();
-      ctx.ellipse(4, -46, 13, 3.5, 0.08, 0, Math.PI * 2);
+      ctx.arc(ponyX, -36, 7, 0, Math.PI * 2);
       ctx.fill();
     }
-  }
 
-  // Face features (when not facing straight up)
-  if (facing !== 'up') {
+    // Head
+    ctx.fillStyle = colors.skin;
+    ctx.strokeStyle = 'rgba(61, 44, 46, 0.32)';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.arc(0, -40, 14, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Hair Top & Style
+    ctx.fillStyle = colors.hair;
+    if (gender === 'female') {
+      // Bangs / fringe
+      ctx.beginPath();
+      ctx.arc(0, -43, 14.2, Math.PI, Math.PI * 2);
+      ctx.lineTo(13, -38);
+      ctx.quadraticCurveTo(5, -42, 0, -39);
+      ctx.quadraticCurveTo(-6, -42, -13, -38);
+      ctx.closePath();
+      ctx.fill();
+
+      // Cute hair bow for shopkeeper
+      if (isPlayer) {
+        ctx.fillStyle = colors.accent;
+        ctx.beginPath();
+        ctx.ellipse(-6, -53, 5, 3.2, -0.3, 0, Math.PI * 2);
+        ctx.ellipse(2, -53, 5, 3.2, 0.3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(-2, -53, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else {
+      // Male swept hair
+      ctx.beginPath();
+      ctx.arc(0, -43, 14.2, Math.PI * 0.95, Math.PI * 2.05);
+      ctx.lineTo(12, -41);
+      ctx.lineTo(4, -44);
+      ctx.lineTo(-4, -41);
+      ctx.lineTo(-12, -43);
+      ctx.closePath();
+      ctx.fill();
+
+      // Cute shopkeeper cap for male player
+      if (isPlayer) {
+        ctx.fillStyle = colors.accent;
+        ctx.beginPath();
+        ctx.arc(0, -46, 13.5, Math.PI, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#1d7874';
+        const brimShift = facing === 'left' ? -4 : facing === 'right' ? 4 : 4;
+        ctx.beginPath();
+        ctx.ellipse(brimShift, -46, 13, 3.5, 0.08, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Face features
     const eyeShiftX = facing === 'left' ? -3 : facing === 'right' ? 3 : 0;
     ctx.fillStyle = '#3d2c2e';
     ctx.beginPath();
@@ -730,8 +876,8 @@ export function drawCharacter(ctx, opts) {
     ctx.stroke();
   }
 
-  // Held slime jar in front of character
-  if (holdingItem) {
+  // Held slime jar in front of character when facing down/left/right
+  if (holdingItem && !facingBack) {
     const holdX = facing === 'left' ? -13 : facing === 'right' ? 13 : 11;
     drawSlimeItem(ctx, holdingItem, holdX, -18, 0.21, time);
   }

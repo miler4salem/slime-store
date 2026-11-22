@@ -265,6 +265,21 @@ export function takeSlimeForCustomer(standId, slotIndex) {
   return item;
 }
 
+export function returnSlimeToStore(item, preferredStandId = null) {
+  if (!item) return;
+  if (preferredStandId && gameState.persisted.shelves[preferredStandId]) {
+    const slots = gameState.persisted.shelves[preferredStandId];
+    const emptyIdx = slots.findIndex((s) => s === null);
+    if (emptyIdx !== -1) {
+      slots[emptyIdx] = item;
+      saveSession();
+      return;
+    }
+  }
+  gameState.persisted.tray.unshift(item);
+  saveSession();
+}
+
 export function recordSale(item) {
   const amount = Number(item.price.toFixed(2));
   gameState.persisted.cash = Number((gameState.persisted.cash + amount).toFixed(2));
